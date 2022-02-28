@@ -29,8 +29,8 @@ variable "is_create_db_subnet_group" {
 
 variable "availability_zones" {
   description = "(optional) describe your variable"
-  type = list(string)
-  default = null
+  type        = list(string)
+  default     = null
 }
 
 variable "db_subnet_group_name" {
@@ -420,24 +420,6 @@ variable "security_group_description" {
   description = "The description of the security group. If value is set to empty string it will contain cluster name in the description"
   type        = string
   default     = null
-}
-
-variable "security_group_tags" {
-  description = "Additional tags for the security group"
-  type        = map(string)
-  default     = {}
-}
-
-variable "allowed_security_groups" {
-  description = "A list of Security Group ID's to allow access to"
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_cidr_blocks" {
-  description = "A list of CIDR blocks which are allowed to access the database"
-  type        = list(string)
-  default     = []
 }
 
 variable "security_group_ingress_rules" {

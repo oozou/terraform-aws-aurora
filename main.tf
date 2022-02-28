@@ -65,10 +65,10 @@ resource "aws_rds_cluster" "this" {
   cluster_identifier            = local.name
   replication_source_identifier = var.replication_source_identifier
 
-  port           = var.port
-  engine         = var.engine
-  engine_mode    = var.engine_mode
-  engine_version = var.engine_version
+  port               = var.port
+  engine             = var.engine
+  engine_mode        = var.engine_mode
+  engine_version     = var.engine_version
   availability_zones = var.availability_zones
 
   storage_encrypted = var.is_storage_encrypted
