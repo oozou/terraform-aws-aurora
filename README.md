@@ -2,7 +2,7 @@
 
 ```terraform
 module "aurora_hangtong" {
-  source = "git::ssh://git@github.com:oozou/terraform-aws-aurora-postgres.git?ref=<selected_tag>"
+  source = "git::ssh://<source_repo>?ref=<selected_tag>"
 
   name        = "postgresql-demo-db"
   environment = "uat"
