@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 locals {
-  name   = "postgresql"
+  name   = "aurora-mysql-db"
   region = "ap-southeast-1"
   tags = {
     Owner       = "user"
@@ -32,7 +32,6 @@ module "vpc" {
   environment  = "test"
   account_mode = "spoke"
 
-
   cidr              = "10.105.0.0/16"
   public_subnets    = ["10.105.0.0/24", "10.105.1.0/24", "10.105.2.0/24"]
   private_subnets   = ["10.105.60.0/22", "10.105.64.0/22", "10.105.68.0/22"]
@@ -56,19 +55,21 @@ module "vpc" {
 module "aurora" {
   source = "../.."
 
-  name        = "postgresql-demo-db"
-  environment = "uat"
-  engine_version = "12.7"
+  name           = local.name
+  environment    = "test"
+
+  engine                  = "aurora-mysql"
+  engine_version          = "5.7.mysql_aurora.2.03.2"
 
   is_instances_use_identifier_prefix = true
   instances = {
     one = {
       identifier_prefix = "writer-db-instance1"
-      instance_class    = "db.r6g.large"
+      instance_class    = "db.r4.large"
     }
     two = {
       identifier_prefix = "reader-db-instance1"
-      instance_class    = "db.r6g.large"
+      instance_class    = "db.r4.large"
     }
   }
   endpoints = {
@@ -78,7 +79,7 @@ module "aurora" {
     }
   }
 
-  instance_class           = "db.r6g.large"
+  #instance_class           = "db.r6g.xlarge"
   is_autoscaling_enabled   = true
   autoscaling_max_capacity = 3
   autoscaling_min_capacity = 1
@@ -107,23 +108,23 @@ module "aurora" {
   kms_key_id           = null
 
   is_skip_final_snapshot          = true
-  enabled_cloudwatch_logs_exports = ["postgresql"]
+  enabled_cloudwatch_logs_exports = ["audit", "error", "general", "slowquery"]
   db_parameter_group_name         = aws_db_parameter_group.example.id
   db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.example.id
   tags                            = { workspace = "000-oozou-aurora test" }
 }
 
 resource "aws_db_parameter_group" "example" {
-  name        = "${local.name}-aurora-db-postgres12-parameter-group"
-  family      = "aurora-postgresql12"
-  description = "${local.name}-aurora-db-postgres12-parameter-group"
+  name        = "${local.name}-aurora-db-57-parameter-group"
+  family      = "aurora-mysql5.7"
+  description = "${local.name}-aurora-db-57-parameter-group"
   tags        = local.tags
 }
 
 resource "aws_rds_cluster_parameter_group" "example" {
-  name        = "${local.name}-aurora-postgres12-cluster-parameter-group"
-  family      = "aurora-postgresql12"
-  description = "${local.name}-aurora-postgres12-cluster-parameter-group"
+  name        = "${local.name}-aurora-57-cluster-parameter-group"
+  family      = "aurora-mysql5.7"
+  description = "${local.name}-aurora-57-cluster-parameter-group"
   tags        = local.tags
 }
 

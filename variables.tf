@@ -66,19 +66,19 @@ variable "engine" {
 variable "engine_mode" {
   description = "The database engine mode. Valid values: `global`, `multimaster`, `parallelquery`, `provisioned`, `serverless`. Defaults to: `provisioned`"
   type        = string
-  default     = "provisioned"
+  default     = null
 }
 
 variable "engine_version" {
   description = "The database engine version. Updating this argument results in an outage"
   type        = string
-  default     = "12.7"
+  default     = null
 }
 
 variable "port" {
   description = "The port on which the DB accepts connections"
   type        = number
-  default     = 5432
+  default     = null
 }
 
 variable "is_allow_major_version_upgrade" {
@@ -215,6 +215,12 @@ variable "enabled_cloudwatch_logs_exports" {
 
 variable "restore_to_point_in_time" {
   description = "Map of nested attributes for cloning Aurora cluster"
+  type        = map(string)
+  default     = {}
+}
+
+variable "scaling_configuration" {
+  description = "Map of nested attributes with scaling properties. Only valid when `engine_mode` is set to `serverless`"
   type        = map(string)
   default     = {}
 }

@@ -32,7 +32,6 @@ module "vpc" {
   environment  = "test"
   account_mode = "spoke"
 
-
   cidr              = "10.105.0.0/16"
   public_subnets    = ["10.105.0.0/24", "10.105.1.0/24", "10.105.2.0/24"]
   private_subnets   = ["10.105.60.0/22", "10.105.64.0/22", "10.105.68.0/22"]
@@ -56,43 +55,27 @@ module "vpc" {
 module "aurora" {
   source = "../.."
 
-  name        = "postgresql-demo-db"
+  name        = "serverless-demo-db"
   environment = "uat"
-  engine_version = "12.7"
+  engine_mode = "serverless"
+  engine      = "aurora-postgresql"
 
-  is_instances_use_identifier_prefix = true
-  instances = {
-    one = {
-      identifier_prefix = "writer-db-instance1"
-      instance_class    = "db.r6g.large"
-    }
-    two = {
-      identifier_prefix = "reader-db-instance1"
-      instance_class    = "db.r6g.large"
-    }
+  scaling_configuration = {
+    auto_pause               = true
+    min_capacity             = 2
+    max_capacity             = 16
+    seconds_until_auto_pause = 300
+    timeout_action           = "ForceApplyCapacityChange"
   }
-  endpoints = {
-    reader = {
-      identifier = "reader"
-      type       = "READER"
-    }
-  }
-
-  instance_class           = "db.r6g.large"
-  is_autoscaling_enabled   = true
-  autoscaling_max_capacity = 3
-  autoscaling_min_capacity = 1
 
   vpc_id              = module.vpc.vpc_id
   db_subnet_group_ids = module.vpc.database_subnet_ids
 
   security_group_ingress_rules = {
     allow_all = {
-      cidr_blocks = ["0.0.0.0/0", "1.1.1.1/32"]
+      cidr_blocks = ["0.0.0.0/0"]
     }
-    allow_vpn_in_client_network = {
-      cidr_blocks = ["172.16.0.0/24"]
-    }
+
 
   }
   security_group_egress_rules = {
@@ -106,24 +89,24 @@ module "aurora" {
   is_storage_encrypted = true
   kms_key_id           = null
 
+  # enabled_cloudwatch_logs_exports = # NOT SUPPORTED
   is_skip_final_snapshot          = true
-  enabled_cloudwatch_logs_exports = ["postgresql"]
   db_parameter_group_name         = aws_db_parameter_group.example.id
   db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.example.id
   tags                            = { workspace = "000-oozou-aurora test" }
 }
 
 resource "aws_db_parameter_group" "example" {
-  name        = "${local.name}-aurora-db-postgres12-parameter-group"
-  family      = "aurora-postgresql12"
-  description = "${local.name}-aurora-db-postgres12-parameter-group"
+  name        = "${local.name}-aurora-db-postgres10-parameter-group"
+  family      = "aurora-postgresql10"
+  description = "${local.name}-aurora-db-postgres10-parameter-group"
   tags        = local.tags
 }
 
 resource "aws_rds_cluster_parameter_group" "example" {
-  name        = "${local.name}-aurora-postgres12-cluster-parameter-group"
-  family      = "aurora-postgresql12"
-  description = "${local.name}-aurora-postgres12-cluster-parameter-group"
+  name        = "${local.name}-aurora-postgres10-cluster-parameter-group"
+  family      = "aurora-postgresql10"
+  description = "${local.name}-aurora-postgres10-cluster-parameter-group"
   tags        = local.tags
 }
 
