@@ -84,8 +84,8 @@ module "aurora_hangtong" {
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 3.63 |
-| <a name="provider_random"></a> [random](#provider\_random) | >= 2.2 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 4.2.0 |
+| <a name="provider_random"></a> [random](#provider\_random) | >= 3.1.0 |
 
 ## Modules
 
