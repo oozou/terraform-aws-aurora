@@ -2,14 +2,19 @@
 /*                                   LOCALS                                   */
 /* -------------------------------------------------------------------------- */
 locals {
+
+  port = coalesce(var.port, (var.engine == "aurora-postgresql" ? 5432 : 3306))
   name        = format("%s-%s", var.environment, var.name)
   environment = var.environment
+
+
 
   is_create_random_master_password = var.master_password == ""
   master_password                  = var.is_create_cluster && local.is_create_random_master_password ? random_password.master_password[0].result : var.master_password
   db_subnet_group_name             = var.is_create_db_subnet_group ? join("", aws_db_subnet_group.this.*.name) : var.db_subnet_group_name
   rds_enhanced_monitoring_arn      = var.is_create_monitoring_role ? join("", aws_iam_role.rds_enhanced_monitoring.*.arn) : var.monitoring_role_arn
   rds_security_group_id            = join("", aws_security_group.this.*.id)
+  is_serverless               = var.engine_mode == "serverless"
 
   tags = merge(
     {
@@ -65,10 +70,10 @@ resource "aws_rds_cluster" "this" {
   cluster_identifier            = local.name
   replication_source_identifier = var.replication_source_identifier
 
-  port               = var.port
+  port               = local.port
   engine             = var.engine
   engine_mode        = var.engine_mode
-  engine_version     = var.engine_version
+  engine_version     = local.is_serverless ? null : var.engine_version
   availability_zones = var.availability_zones
 
   storage_encrypted = var.is_storage_encrypted
@@ -84,8 +89,9 @@ resource "aws_rds_cluster" "this" {
 
   deletion_protection          = var.deletion_protection
   backup_retention_period      = var.backup_retention_period
-  preferred_backup_window      = var.preferred_backup_window
-  preferred_maintenance_window = var.preferred_maintenance_window
+
+  preferred_backup_window             = local.is_serverless ? null : var.preferred_backup_window
+  preferred_maintenance_window        = local.is_serverless ? null : var.preferred_maintenance_window
 
   vpc_security_group_ids              = compact(concat(aws_security_group.this.*.id, var.vpc_security_group_ids))
   allow_major_version_upgrade         = var.is_allow_major_version_upgrade
@@ -96,6 +102,19 @@ resource "aws_rds_cluster" "this" {
 
   # Restore from snapshot or not
   snapshot_identifier = var.snapshot_identifier
+
+  # serverless auto scaling configuration
+  dynamic "scaling_configuration" {
+    for_each = length(keys(var.scaling_configuration)) == 0 || !local.is_serverless ? [] : [var.scaling_configuration]
+
+    content {
+      auto_pause               = lookup(scaling_configuration.value, "auto_pause", null)
+      max_capacity             = lookup(scaling_configuration.value, "max_capacity", null)
+      min_capacity             = lookup(scaling_configuration.value, "min_capacity", null)
+      seconds_until_auto_pause = lookup(scaling_configuration.value, "seconds_until_auto_pause", null)
+      timeout_action           = lookup(scaling_configuration.value, "timeout_action", null)
+    }
+  }  
 
   # Restore to the point at the specific time
   dynamic "restore_to_point_in_time" {
@@ -124,7 +143,7 @@ resource "aws_rds_cluster" "this" {
 /*                              CLUSTER INSTNACE                              */
 /* -------------------------------------------------------------------------- */
 resource "aws_rds_cluster_instance" "this" {
-  for_each = var.is_create_cluster ? var.instances : {}
+  for_each = var.is_create_cluster  && !local.is_serverless ? var.instances : {}
 
   identifier                            = var.is_instances_use_identifier_prefix ? null : lookup(each.value, "identifier", "${local.name}-${each.key}")
   identifier_prefix                     = var.is_instances_use_identifier_prefix ? lookup(each.value, "identifier_prefix", "${local.name}-${each.key}-") : null
@@ -155,7 +174,7 @@ resource "aws_rds_cluster_instance" "this" {
 /*                              CLUSTER ENDPOINTS                             */
 /* -------------------------------------------------------------------------- */
 resource "aws_rds_cluster_endpoint" "this" {
-  for_each = var.is_create_cluster ? var.endpoints : tomap({})
+  for_each = var.is_create_cluster && !local.is_serverless ? var.endpoints : tomap({})
 
   depends_on = [
     aws_rds_cluster_instance.this
@@ -223,7 +242,7 @@ resource "aws_iam_role_policy_attachment" "rds_enhanced_monitoring" {
 /*                                AUTO SCALING                                */
 /* -------------------------------------------------------------------------- */
 resource "aws_appautoscaling_policy" "this" {
-  count = var.is_create_cluster && var.is_autoscaling_enabled ? 1 : 0
+  count = var.is_create_cluster && var.is_autoscaling_enabled && !local.is_serverless ? 1 : 0
 
   depends_on = [
     aws_appautoscaling_target.this
@@ -247,7 +266,7 @@ resource "aws_appautoscaling_policy" "this" {
 }
 
 resource "aws_appautoscaling_target" "this" {
-  count = var.is_create_cluster && var.is_autoscaling_enabled ? 1 : 0
+  count = var.is_create_cluster  && var.is_autoscaling_enabled && !local.is_serverless ? 1 : 0
 
   max_capacity       = var.autoscaling_max_capacity
   min_capacity       = var.autoscaling_min_capacity
@@ -273,8 +292,8 @@ resource "aws_security_group_rule" "ingress" {
   for_each = var.is_create_cluster && var.is_create_security_group ? var.security_group_ingress_rules : null
 
   type                     = "ingress"
-  from_port                = lookup(each.value, "from_port", var.port)
-  to_port                  = lookup(each.value, "to_port", var.port)
+  from_port                = lookup(each.value, "from_port", local.port)
+  to_port                  = lookup(each.value, "to_port", local.port)
   protocol                 = lookup(each.value, "protocol", "tcp")
   cidr_blocks              = lookup(each.value, "cidr_blocks", null)
   source_security_group_id = lookup(each.value, "source_security_group_id", null)
@@ -287,8 +306,8 @@ resource "aws_security_group_rule" "egress" {
 
   # required
   type              = "egress"
-  from_port         = lookup(each.value, "from_port", var.port)
-  to_port           = lookup(each.value, "to_port", var.port)
+  from_port         = lookup(each.value, "from_port", local.port)
+  to_port           = lookup(each.value, "to_port", local.port)
   protocol          = lookup(each.value, "protocol", "tcp")
   security_group_id = local.rds_security_group_id
 
