@@ -1,31 +1,4 @@
 /* -------------------------------------------------------------------------- */
-/*                                   LOCALS                                   */
-/* -------------------------------------------------------------------------- */
-locals {
-
-  port = coalesce(var.port, (var.engine == "aurora-postgresql" ? 5432 : 3306))
-  name        = format("%s-%s", var.environment, var.name)
-  environment = var.environment
-
-
-
-  is_create_random_master_password = var.master_password == ""
-  master_password                  = var.is_create_cluster && local.is_create_random_master_password ? random_password.master_password[0].result : var.master_password
-  db_subnet_group_name             = var.is_create_db_subnet_group ? join("", aws_db_subnet_group.this.*.name) : var.db_subnet_group_name
-  rds_enhanced_monitoring_arn      = var.is_create_monitoring_role ? join("", aws_iam_role.rds_enhanced_monitoring.*.arn) : var.monitoring_role_arn
-  rds_security_group_id            = join("", aws_security_group.this.*.id)
-  is_serverless               = var.engine_mode == "serverless"
-
-  tags = merge(
-    {
-      Terraform   = true
-      Environment = local.environment
-    },
-    var.tags
-  )
-}
-
-/* -------------------------------------------------------------------------- */
 /*                                    DATA                                    */
 /* -------------------------------------------------------------------------- */
 # Ref. https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-aws-service-namespaces
@@ -57,17 +30,17 @@ resource "random_id" "snapshot_identifier" {
 resource "aws_db_subnet_group" "this" {
   count = var.is_create_cluster && var.is_create_db_subnet_group ? 1 : 0
 
-  name        = local.name
-  description = "For Aurora cluster ${local.name}"
+  name        = "${local.name}-cluster-sngroup"
+  description = "Aurora cluster subnet group for ${local.name}"
   subnet_ids  = var.db_subnet_group_ids
 
-  tags = merge(local.tags, { "Name" : "${local.name}" })
+  tags = merge(local.tags, { "Name" : "${local.name}-cluster-sngroup" })
 }
 
 resource "aws_rds_cluster" "this" {
   count = var.is_create_cluster ? 1 : 0
 
-  cluster_identifier            = local.name
+  cluster_identifier            = "${local.name}-cluster"
   replication_source_identifier = var.replication_source_identifier
 
   port               = local.port
@@ -83,19 +56,19 @@ resource "aws_rds_cluster" "this" {
   master_username           = var.master_username
   master_password           = local.master_password
   db_subnet_group_name      = local.db_subnet_group_name
-  final_snapshot_identifier = "${var.final_snapshot_identifier_prefix}-${var.name}-${element(concat(random_id.snapshot_identifier.*.hex, [""]), 0)}"
+  final_snapshot_identifier = "${local.name}-final-${element(concat(random_id.snapshot_identifier.*.hex, [""]), 0)}"
   skip_final_snapshot       = var.is_skip_final_snapshot
   apply_immediately         = var.is_apply_immediately
 
-  deletion_protection          = var.deletion_protection
-  backup_retention_period      = var.backup_retention_period
+  deletion_protection     = var.deletion_protection
+  backup_retention_period = var.backup_retention_period
 
-  preferred_backup_window             = local.is_serverless ? null : var.preferred_backup_window
-  preferred_maintenance_window        = local.is_serverless ? null : var.preferred_maintenance_window
+  preferred_backup_window      = local.is_serverless ? null : var.preferred_backup_window
+  preferred_maintenance_window = local.is_serverless ? null : var.preferred_maintenance_window
 
   vpc_security_group_ids              = compact(concat(aws_security_group.this.*.id, var.vpc_security_group_ids))
   allow_major_version_upgrade         = var.is_allow_major_version_upgrade
-  db_cluster_parameter_group_name     = var.db_cluster_parameter_group_name
+  db_cluster_parameter_group_name     = var.is_create_db_cluster_parameter_group ? join("", aws_rds_cluster_parameter_group.this.*.id) : var.db_cluster_parameter_group_name
   db_instance_parameter_group_name    = var.is_allow_major_version_upgrade ? var.db_cluster_db_instance_parameter_group_name : null
   iam_database_authentication_enabled = var.is_iam_database_authentication_enabled
   enabled_cloudwatch_logs_exports     = var.enabled_cloudwatch_logs_exports
@@ -114,7 +87,7 @@ resource "aws_rds_cluster" "this" {
       seconds_until_auto_pause = lookup(scaling_configuration.value, "seconds_until_auto_pause", null)
       timeout_action           = lookup(scaling_configuration.value, "timeout_action", null)
     }
-  }  
+  }
 
   # Restore to the point at the specific time
   dynamic "restore_to_point_in_time" {
@@ -143,7 +116,7 @@ resource "aws_rds_cluster" "this" {
 /*                              CLUSTER INSTNACE                              */
 /* -------------------------------------------------------------------------- */
 resource "aws_rds_cluster_instance" "this" {
-  for_each = var.is_create_cluster  && !local.is_serverless ? var.instances : {}
+  for_each = var.is_create_cluster && !local.is_serverless ? var.instances : {}
 
   identifier                            = var.is_instances_use_identifier_prefix ? null : lookup(each.value, "identifier", "${local.name}-${each.key}")
   identifier_prefix                     = var.is_instances_use_identifier_prefix ? lookup(each.value, "identifier_prefix", "${local.name}-${each.key}-") : null
@@ -153,7 +126,7 @@ resource "aws_rds_cluster_instance" "this" {
   instance_class                        = lookup(each.value, "instance_class", var.instance_class)
   publicly_accessible                   = lookup(each.value, "publicly_accessible", var.publicly_accessible)
   db_subnet_group_name                  = local.db_subnet_group_name
-  db_parameter_group_name               = lookup(each.value, "db_parameter_group_name", var.db_parameter_group_name)
+  db_parameter_group_name               = var.is_create_db_parameter_group ? join("", aws_db_parameter_group.this.*.id) : lookup(each.value, "db_parameter_group_name", var.db_parameter_group_name)
   apply_immediately                     = lookup(each.value, "apply_immediately", var.is_apply_immediately)
   monitoring_role_arn                   = local.rds_enhanced_monitoring_arn
   monitoring_interval                   = lookup(each.value, "monitoring_interval", var.monitoring_interval)
@@ -216,9 +189,8 @@ data "aws_iam_policy_document" "monitoring_rds_assume_role" {
 }
 
 resource "aws_iam_role" "rds_enhanced_monitoring" {
-  count = var.is_create_cluster && var.is_create_monitoring_role && var.monitoring_interval > 0 ? 1 : 0
-
-  name        = format("%s-%s", upper(local.environment), var.iam_role_name)
+  count       = var.is_create_cluster && var.is_create_monitoring_role && var.monitoring_interval > 0 ? 1 : 0
+  name        = "${local.name}-cluster-monitoring-role"
   description = "Role created to monitor the RDS"
   path        = "/"
 
@@ -228,7 +200,7 @@ resource "aws_iam_role" "rds_enhanced_monitoring" {
   force_detach_policies = var.iam_role_force_detach_policies
   max_session_duration  = var.iam_role_max_session_duration
 
-  tags = merge(local.tags, { "Name" : format("%s-%s", upper(local.environment), var.iam_role_name) })
+  tags = merge(local.tags, { "Name" : "${local.name}-cluster-monitoring-role" })
 }
 
 resource "aws_iam_role_policy_attachment" "rds_enhanced_monitoring" {
@@ -266,7 +238,7 @@ resource "aws_appautoscaling_policy" "this" {
 }
 
 resource "aws_appautoscaling_target" "this" {
-  count = var.is_create_cluster  && var.is_autoscaling_enabled && !local.is_serverless ? 1 : 0
+  count = var.is_create_cluster && var.is_autoscaling_enabled && !local.is_serverless ? 1 : 0
 
   max_capacity       = var.autoscaling_max_capacity
   min_capacity       = var.autoscaling_min_capacity
@@ -281,11 +253,11 @@ resource "aws_appautoscaling_target" "this" {
 resource "aws_security_group" "this" {
   count = var.is_create_cluster && var.is_create_security_group ? 1 : 0
 
-  name_prefix = "${local.name}-"
+  name        = "${local.name}-cluster-sg"
   vpc_id      = var.vpc_id
   description = coalesce(var.security_group_description, "Control traffic to/from RDS Aurora ${var.name}")
 
-  tags = merge(local.tags, { "Name" = "${local.name}" })
+  tags = merge(local.tags, { "Name" = "${local.name}-cluster-sg" })
 }
 
 resource "aws_security_group_rule" "ingress" {
@@ -317,4 +289,45 @@ resource "aws_security_group_rule" "egress" {
   ipv6_cidr_blocks         = lookup(each.value, "ipv6_cidr_blocks", null)
   prefix_list_ids          = lookup(each.value, "prefix_list_ids", null)
   source_security_group_id = lookup(each.value, "source_security_group_id", null)
+}
+
+/* -------------------------------------------------------------------------- */
+/*                           AWS_DB_PARAMETER_GROUP                           */
+/* -------------------------------------------------------------------------- */
+resource "aws_db_parameter_group" "this" {
+  count = var.is_create_cluster && var.is_create_db_parameter_group ? 1 : 0
+
+  name        = "${local.name}-param"
+  description = format("Database parameter group for %s", local.name)
+  family      = local.parameter_family
+
+  dynamic "parameter" {
+    for_each = var.db_parameters
+    content {
+      name         = parameter.value.name
+      value        = parameter.value.value
+      apply_method = lookup(parameter.value, "apply_method", null)
+    }
+  }
+
+  tags = merge(local.tags, { Name = "${local.name}-param" })
+}
+
+resource "aws_rds_cluster_parameter_group" "this" {
+  count = var.is_create_cluster && var.is_create_db_cluster_parameter_group ? 1 : 0
+
+  name        = "${local.name}-cluster-param"
+  family      = local.parameter_family
+  description = format("Database Cluster parameter group for %s", local.name)
+
+  dynamic "parameter" {
+    for_each = var.db_cluster_parameters
+    content {
+      name         = parameter.value.name
+      value        = parameter.value.value
+      apply_method = lookup(parameter.value, "apply_method", null)
+    }
+  }
+
+  tags = merge(local.tags, { Name = "${local.name}-cluster-param" })
 }
