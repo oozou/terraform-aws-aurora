@@ -1,14 +1,18 @@
 /* -------------------------------------------------------------------------- */
 /*                                  GENERICS                                  */
 /* -------------------------------------------------------------------------- */
+variable "prefix" {
+  description = "The prefix name of customer to be displayed in AWS console and resource."
+  type        = string
+}
+
 variable "name" {
   description = "Name used across resources created"
   type        = string
-  default     = ""
 }
 
 variable "environment" {
-  description = "Environment Variable used as a prefix"
+  description = "Environment name used as environment resources name."
   type        = string
 }
 
@@ -42,7 +46,6 @@ variable "db_subnet_group_name" {
 variable "db_subnet_group_ids" {
   description = "List of subnet IDs used by database subnet group created"
   type        = list(string)
-  default     = []
 }
 
 variable "is_create_cluster" {
@@ -58,21 +61,19 @@ variable "replication_source_identifier" {
 }
 
 variable "engine" {
-  description = "The name of the database engine to be used for this DB cluster. Defaults to `aurora`. Valid Values: `aurora`, `aurora-mysql`, `aurora-postgresql`"
+  description = "The name of the database engine to be used for this DB cluster. Valid Values: `aurora`, `aurora-mysql`, `aurora-postgresql`"
   type        = string
-  default     = "aurora-postgresql"
 }
 
 variable "engine_mode" {
   description = "The database engine mode. Valid values: `global`, `multimaster`, `parallelquery`, `provisioned`, `serverless`. Defaults to: `provisioned`"
   type        = string
-  default     = null
+  default     = "provisioned"
 }
 
 variable "engine_version" {
   description = "The database engine version. Updating this argument results in an outage"
   type        = string
-  default     = null
 }
 
 variable "port" {
@@ -123,16 +124,10 @@ variable "master_password" {
   default     = ""
 }
 
-variable "final_snapshot_identifier_prefix" {
-  description = "The prefix name to use when creating a final snapshot on cluster destroy; a 8 random digits are appended to name to ensure it's unique"
-  type        = string
-  default     = "final"
-}
-
 variable "is_skip_final_snapshot" {
   description = "Determines whether a final snapshot is created before the cluster is deleted. If true is specified, no snapshot is created"
   type        = bool
-  default     = null
+  default     = false
 }
 
 variable "deletion_protection" {
@@ -183,12 +178,6 @@ variable "is_apply_immediately" {
   default     = false
 }
 
-variable "db_cluster_parameter_group_name" {
-  description = "A cluster parameter group to associate with the cluster"
-  type        = string
-  default     = null
-}
-
 variable "db_cluster_db_instance_parameter_group_name" {
   description = "Instance parameter group to associate with all instances of the DB cluster. The `db_cluster_db_instance_parameter_group_name` is only valid in combination with `is_allow_major_version_upgrade`"
   type        = string
@@ -198,7 +187,7 @@ variable "db_cluster_db_instance_parameter_group_name" {
 variable "is_iam_database_authentication_enabled" {
   description = "Specifies whether or mappings of AWS Identity and Access Management (IAM) accounts to database accounts is enabled"
   type        = bool
-  default     = null
+  default     = false
 }
 
 variable "is_copy_tags_to_snapshot" {
@@ -252,28 +241,22 @@ variable "publicly_accessible" {
   default     = false
 }
 
-variable "db_parameter_group_name" {
-  description = "The name of the DB parameter group to associate with instances"
-  type        = string
-  default     = null
-}
-
 variable "monitoring_interval" {
   description = "The interval, in seconds, between points when Enhanced Monitoring metrics are collected for instances. Set to `0` to disble. Default is `0`"
   type        = number
-  default     = 30
+  default     = 0
 }
 
 variable "auto_minor_version_upgrade" {
   description = "Indicates that minor engine upgrades will be applied automatically to the DB instance during the maintenance window. Default `true`"
   type        = bool
-  default     = null
+  default     = true
 }
 
 variable "performance_insights_enabled" {
-  description = "Specifies whether Performance Insights is enabled or not"
+  description = "Specifies whether Performance Insights is enabled or not. Default `false`"
   type        = bool
-  default     = null
+  default     = false
 }
 
 variable "performance_insights_kms_key_id" {
@@ -283,9 +266,9 @@ variable "performance_insights_kms_key_id" {
 }
 
 variable "performance_insights_retention_period" {
-  description = "Amount of time in days to retain Performance Insights data. Either 7 (7 days) or 731 (2 years)"
+  description = "Amount of time in days to retain Performance Insights data. Either 7 (7 days) or 731 (2 years). Default to `7`"
   type        = number
-  default     = null
+  default     = 7
 }
 
 variable "ca_cert_identifier" {
@@ -325,12 +308,6 @@ variable "monitoring_role_arn" {
   description = "IAM role used by RDS to send enhanced monitoring metrics to CloudWatch"
   type        = string
   default     = ""
-}
-
-variable "iam_role_name" {
-  description = "Friendly name of the monitoring role"
-  type        = string
-  default     = "ServiceRDSMonitoring"
 }
 
 variable "iam_role_managed_policy_arns" {
@@ -438,4 +415,51 @@ variable "security_group_egress_rules" {
   description = "A map of security group egress rule defintions to add to the security group created"
   type        = any
   default     = {}
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               PARAMETER GROUP                              */
+/* -------------------------------------------------------------------------- */
+variable "is_create_db_parameter_group" {
+  description = "Whether to create db parameter group or not"
+  type        = bool
+  default     = true
+}
+
+variable "db_parameter_group_name" {
+  description = "Input existed name of the DB parameter group to associate with instances"
+  type        = string
+  default     = null
+}
+
+variable "db_parameters" {
+  description = "A list of DB parameter maps to apply"
+  type = list(object({
+    apply_method = string
+    name         = string
+    value        = string
+  }))
+  default = []
+}
+
+variable "is_create_db_cluster_parameter_group" {
+  description = "Whether to create db cluster parameter group or not"
+  type        = bool
+  default     = true
+}
+
+variable "db_cluster_parameter_group_name" {
+  description = "Input existed cluster parameter group to associate with the cluster"
+  type        = string
+  default     = null
+}
+
+variable "db_cluster_parameters" {
+  description = "A list of DB parameter maps to apply"
+  type = list(object({
+    apply_method = string
+    name         = string
+    value        = string
+  }))
+  default = []
 }

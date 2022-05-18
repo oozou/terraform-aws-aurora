@@ -99,3 +99,13 @@ output "security_group_id" {
   description = "The security group ID of the cluster"
   value       = local.rds_security_group_id
 }
+
+output "db_parameter_group_name" {
+  description = "name of db parameter group"
+  value       = join("", aws_db_parameter_group.this.*.id)
+}
+
+output "db_cluster_parameter_group_name" {
+  description = "name of db cluster parameter group"
+  value       = join("", aws_rds_cluster_parameter_group.this.*.id)
+}
