@@ -1,4 +1,23 @@
+# Change Log
 
-<a name="v1.0.0"></a>
-## v1.0.0 (2022-03-30)
+All notable changes to this module will be documented in this file.
 
+## [1.0.2] - 2022-05-18
+
+
+### Updated
+
+- fix: resources naming and add compatible for create parameter
+
+## [1.0.1] - 2022-04-29
+
+
+### Added
+
+- add support for mysql and serverless
+
+## [1.0.0] - 2022-04-25
+
+### Added
+
+- init terraform-aws-aurora
