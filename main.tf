@@ -110,6 +110,9 @@ resource "aws_rds_cluster" "this" {
 
   tags                  = merge(local.tags, { "Name" : "${var.database_name}" })
   copy_tags_to_snapshot = var.is_copy_tags_to_snapshot
+  depends_on = [
+    aws_cloudwatch_log_group.this
+  ]
 }
 
 /* -------------------------------------------------------------------------- */

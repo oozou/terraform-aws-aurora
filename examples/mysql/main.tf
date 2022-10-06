@@ -55,11 +55,12 @@ module "vpc" {
 module "aurora" {
   source = "../.."
 
-  name           = local.name
-  environment    = "test"
+  name        = local.name
+  prefix      = "oozou"
+  environment = "test"
 
-  engine                  = "aurora-mysql"
-  engine_version          = "5.7.mysql_aurora.2.03.2"
+  engine         = "aurora-mysql"
+  engine_version = "5.7.mysql_aurora.2.10.2"
 
   is_instances_use_identifier_prefix = true
   instances = {
@@ -103,6 +104,8 @@ module "aurora" {
     }
 
   }
+
+  performance_insights_enabled = true
 
   is_storage_encrypted = true
   kms_key_id           = null
