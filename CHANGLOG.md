@@ -2,15 +2,19 @@
 
 All notable changes to this module will be documented in this file.
 
-## [1.0.2] - 2022-05-18
+## [1.0.3] - 2022-10-07
 
+### Added
+
+- support create log group by terraform
+
+## [1.0.2] - 2022-05-18
 
 ### Updated
 
 - fix: resources naming and add compatible for create parameter
 
 ## [1.0.1] - 2022-04-29
-
 
 ### Added
 
