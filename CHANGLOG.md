@@ -2,11 +2,11 @@
 
 All notable changes to this module will be documented in this file.
 
-## [1.0.3] - 2022-10-07
+## [1.0.3] - 2022-07-18
 
-### Added
+### Updated
 
-- support create log group by terraform
+- set storage encryption default to true
 
 ## [1.0.2] - 2022-05-18
 

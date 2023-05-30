@@ -169,7 +169,7 @@ variable "snapshot_identifier" {
 variable "is_storage_encrypted" {
   description = "Specifies whether the DB cluster is encrypted. The default is `true`"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "is_apply_immediately" {
