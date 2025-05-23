@@ -66,7 +66,7 @@ resource "aws_rds_cluster" "this" {
   preferred_backup_window      = local.is_serverless ? null : var.preferred_backup_window
   preferred_maintenance_window = local.is_serverless ? null : var.preferred_maintenance_window
 
-  vpc_security_group_ids              = compact(concat(aws_security_group.this.*.id, var.vpc_security_group_ids))
+  vpc_security_group_ids              = compact(concat(aws_security_group.server.*.id, var.vpc_security_group_ids))
   allow_major_version_upgrade         = var.is_allow_major_version_upgrade
   db_cluster_parameter_group_name     = var.is_create_db_cluster_parameter_group ? join("", aws_rds_cluster_parameter_group.this.*.id) : var.db_cluster_parameter_group_name
   db_instance_parameter_group_name    = var.is_allow_major_version_upgrade ? var.db_cluster_db_instance_parameter_group_name : null
@@ -250,49 +250,6 @@ resource "aws_appautoscaling_target" "this" {
   service_namespace  = "rds"
 }
 
-/* -------------------------------------------------------------------------- */
-/*                               SECURITY GROUP                               */
-/* -------------------------------------------------------------------------- */
-resource "aws_security_group" "this" {
-  count = var.is_create_cluster && var.is_create_security_group ? 1 : 0
-
-  name        = "${local.name}-cluster-sg"
-  vpc_id      = var.vpc_id
-  description = coalesce(var.security_group_description, "Control traffic to/from RDS Aurora ${var.name}")
-
-  tags = merge(local.tags, { "Name" = "${local.name}-cluster-sg" })
-}
-
-resource "aws_security_group_rule" "ingress" {
-  for_each = var.is_create_cluster && var.is_create_security_group ? var.security_group_ingress_rules : null
-
-  type                     = "ingress"
-  from_port                = lookup(each.value, "from_port", local.port)
-  to_port                  = lookup(each.value, "to_port", local.port)
-  protocol                 = lookup(each.value, "protocol", "tcp")
-  cidr_blocks              = lookup(each.value, "cidr_blocks", null)
-  source_security_group_id = lookup(each.value, "source_security_group_id", null)
-  security_group_id        = local.rds_security_group_id
-  description              = lookup(each.value, "description", null)
-}
-
-resource "aws_security_group_rule" "egress" {
-  for_each = var.is_create_cluster && var.is_create_security_group ? var.security_group_egress_rules : null
-
-  # required
-  type              = "egress"
-  from_port         = lookup(each.value, "from_port", local.port)
-  to_port           = lookup(each.value, "to_port", local.port)
-  protocol          = lookup(each.value, "protocol", "tcp")
-  security_group_id = local.rds_security_group_id
-
-  # optional
-  cidr_blocks              = lookup(each.value, "cidr_blocks", null)
-  description              = lookup(each.value, "description", null)
-  ipv6_cidr_blocks         = lookup(each.value, "ipv6_cidr_blocks", null)
-  prefix_list_ids          = lookup(each.value, "prefix_list_ids", null)
-  source_security_group_id = lookup(each.value, "source_security_group_id", null)
-}
 
 /* -------------------------------------------------------------------------- */
 /*                           AWS_DB_PARAMETER_GROUP                           */

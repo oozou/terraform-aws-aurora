@@ -2,6 +2,17 @@
 
 All notable changes to this module will be documented in this file.
 
+## [1.1.0] - 2025-05-23
+
+### Added client security group
+
+- add resources:
+    - aws_security_group_rule.from_client
+    - aws_security_group.client
+    - aws_security_group_rule.to_cluster
+- add output:
+    - client_security_group_id
+
 ## [1.0.3] - 2022-10-07
 
 ### Added

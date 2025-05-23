@@ -100,6 +100,11 @@ output "security_group_id" {
   value       = local.rds_security_group_id
 }
 
+output "client_security_group_id" {
+  description = "The security group ID of the DB client"
+  value       = local.rds_client_security_group_id
+}
+
 output "db_parameter_group_name" {
   description = "name of db parameter group"
   value       = join("", aws_db_parameter_group.this.*.id)
