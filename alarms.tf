@@ -1,160 +1,148 @@
-# Aurora CloudWatch Alarms
-# CPU Utilization Alarm
-module "aurora_cpu_alarm" {
-  count = var.enable_cloudwatch_alarms ? 1 : 0
+locals {
+  comparison_operators = {
+    ">=" = "GreaterThanOrEqualToThreshold",
+    ">"  = "GreaterThanThreshold",
+    "<"  = "LessThanThreshold",
+    "<=" = "LessThanOrEqualToThreshold",
+  }
+}
 
+# Aurora Cluster Alarms
+module "aurora_cluster_alarms" {
   source  = "oozou/cloudwatch-alarm/aws"
   version = "1.0.0"
 
+  for_each   = var.is_create_cluster ? var.custom_aurora_cluster_alarms_configure : {}
+  depends_on = [aws_rds_cluster.this[0]]
+
   prefix      = var.prefix
   environment = var.environment
-  name        = "${var.name}-aurora-cpu-utilization"
+  name        = format("%s-cluster-%s-alarm", local.name, each.key)
 
-  alarm_description   = "Aurora cluster CPU utilization is too high"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = var.cpu_alarm_evaluation_periods
-  metric_name         = "CPUUtilization"
+  alarm_description = format(
+    "%s's %s %s %s in period %ss with %s datapoint",
+    lookup(each.value, "metric_name", null),
+    lookup(each.value, "statistic", "Average"),
+    lookup(each.value, "comparison_operator", null),
+    lookup(each.value, "threshold", null),
+    lookup(each.value, "period", 600),
+    lookup(each.value, "evaluation_periods", 1)
+  )
+
+  comparison_operator = local.comparison_operators[lookup(each.value, "comparison_operator", null)]
+  evaluation_periods  = lookup(each.value, "evaluation_periods", 1)
+  metric_name         = lookup(each.value, "metric_name", null)
   namespace           = "AWS/RDS"
-  period              = var.cpu_alarm_period
-  statistic           = "Average"
-  threshold           = var.cpu_alarm_threshold
-  alarm_actions       = var.alarm_actions
-  ok_actions          = var.ok_actions
-  treat_missing_data  = "notBreaching"
+  period              = lookup(each.value, "period", 600)
+  statistic           = lookup(each.value, "statistic", "Average")
+  threshold           = lookup(each.value, "threshold", null)
 
   dimensions = {
     DBClusterIdentifier = try(aws_rds_cluster.this[0].cluster_identifier, "")
   }
 
-  tags = merge(local.tags, {
-    Name = "${var.name}-aurora-cpu-utilization"
-  })
+  alarm_actions = lookup(each.value, "alarm_actions", null)
+  ok_actions    = lookup(each.value, "ok_actions", null)
+
+  tags = local.tags
 }
 
-# Memory Usage Alarm (DatabaseConnections as proxy for memory pressure)
-module "aurora_database_connections_alarm" {
-  count = var.enable_cloudwatch_alarms ? 1 : 0
-
+# Aurora Instance Alarms
+module "aurora_instance_alarms" {
   source  = "oozou/cloudwatch-alarm/aws"
   version = "1.0.0"
 
+  for_each = var.is_create_cluster && !local.is_serverless ? {
+    for alarm_key, alarm_config in var.custom_aurora_instance_alarms_configure :
+    alarm_key => merge(alarm_config, {
+      instances = var.instances
+    })
+  } : {}
+
+  depends_on = [aws_rds_cluster_instance.this]
+
   prefix      = var.prefix
   environment = var.environment
-  name        = "${var.name}-aurora-database-connections"
+  name        = format("%s-instance-%s-alarm", local.name, each.key)
 
-  alarm_description   = "Aurora cluster database connections are too high"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = var.connections_alarm_evaluation_periods
-  metric_name         = "DatabaseConnections"
+  alarm_description = format(
+    "%s's %s %s %s in period %ss with %s datapoint",
+    lookup(each.value, "metric_name", null),
+    lookup(each.value, "statistic", "Average"),
+    lookup(each.value, "comparison_operator", null),
+    lookup(each.value, "threshold", null),
+    lookup(each.value, "period", 600),
+    lookup(each.value, "evaluation_periods", 1)
+  )
+
+  comparison_operator = local.comparison_operators[lookup(each.value, "comparison_operator", null)]
+  evaluation_periods  = lookup(each.value, "evaluation_periods", 1)
+  metric_name         = lookup(each.value, "metric_name", null)
   namespace           = "AWS/RDS"
-  period              = var.connections_alarm_period
-  statistic           = "Average"
-  threshold           = var.connections_alarm_threshold
-  alarm_actions       = var.alarm_actions
-  ok_actions          = var.ok_actions
-  treat_missing_data  = "notBreaching"
+  period              = lookup(each.value, "period", 600)
+  statistic           = lookup(each.value, "statistic", "Average")
+  threshold           = lookup(each.value, "threshold", null)
 
   dimensions = {
-    DBClusterIdentifier = try(aws_rds_cluster.this[0].cluster_identifier, "")
+    # This will create alarms for all instances, but we'll handle this differently
+    DBInstanceIdentifier = "placeholder"
   }
 
-  tags = merge(local.tags, {
-    Name = "${var.name}-aurora-database-connections"
-  })
+  alarm_actions = lookup(each.value, "alarm_actions", null)
+  ok_actions    = lookup(each.value, "ok_actions", null)
+
+  tags = local.tags
 }
 
-# Freeable Memory Alarm (for instances)
-module "aurora_freeable_memory_alarm" {
-  for_each = var.enable_cloudwatch_alarms && !local.is_serverless ? var.instances : {}
-
+# Individual Instance Alarms (for metrics that need per-instance monitoring)
+module "aurora_per_instance_alarms" {
   source  = "oozou/cloudwatch-alarm/aws"
   version = "1.0.0"
 
-  prefix      = var.prefix
-  environment = var.environment
-  name        = "${var.name}-aurora-freeable-memory-${each.key}"
+  for_each = var.is_create_cluster && !local.is_serverless ? {
+    for combination in flatten([
+      for instance_key, instance_config in var.instances : [
+        for alarm_key, alarm_config in var.custom_aurora_instance_alarms_configure : {
+          key           = "${instance_key}-${alarm_key}"
+          instance_key  = instance_key
+          alarm_key     = alarm_key
+          alarm_config  = alarm_config
+        }
+      ]
+    ]) : combination.key => combination
+  } : {}
 
-  alarm_description   = "Aurora instance ${each.key} freeable memory is too low"
-  comparison_operator = "LessThanThreshold"
-  evaluation_periods  = var.memory_alarm_evaluation_periods
-  metric_name         = "FreeableMemory"
-  namespace           = "AWS/RDS"
-  period              = var.memory_alarm_period
-  statistic           = "Average"
-  threshold           = var.memory_alarm_threshold
-  alarm_actions       = var.alarm_actions
-  ok_actions          = var.ok_actions
-  treat_missing_data  = "notBreaching"
-
-  dimensions = {
-    DBInstanceIdentifier = aws_rds_cluster_instance.this[each.key].identifier
-  }
-
-  tags = merge(local.tags, {
-    Name = "${var.name}-aurora-freeable-memory-${each.key}"
-  })
-}
-
-# Read Latency Alarm
-module "aurora_read_latency_alarm" {
-  count = var.enable_cloudwatch_alarms ? 1 : 0
-
-  source  = "oozou/cloudwatch-alarm/aws"
-  version = "1.0.0"
+  depends_on = [aws_rds_cluster_instance.this]
 
   prefix      = var.prefix
   environment = var.environment
-  name        = "${var.name}-aurora-read-latency"
+  name        = format("%s-instance-%s-%s-alarm", local.name, each.value.instance_key, each.value.alarm_key)
 
-  alarm_description   = "Aurora cluster read latency is too high"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = var.read_latency_alarm_evaluation_periods
-  metric_name         = "ReadLatency"
+  alarm_description = format(
+    "%s's %s %s %s in period %ss with %s datapoint for instance %s",
+    lookup(each.value.alarm_config, "metric_name", null),
+    lookup(each.value.alarm_config, "statistic", "Average"),
+    lookup(each.value.alarm_config, "comparison_operator", null),
+    lookup(each.value.alarm_config, "threshold", null),
+    lookup(each.value.alarm_config, "period", 600),
+    lookup(each.value.alarm_config, "evaluation_periods", 1),
+    each.value.instance_key
+  )
+
+  comparison_operator = local.comparison_operators[lookup(each.value.alarm_config, "comparison_operator", null)]
+  evaluation_periods  = lookup(each.value.alarm_config, "evaluation_periods", 1)
+  metric_name         = lookup(each.value.alarm_config, "metric_name", null)
   namespace           = "AWS/RDS"
-  period              = var.read_latency_alarm_period
-  statistic           = "Average"
-  threshold           = var.read_latency_alarm_threshold
-  alarm_actions       = var.alarm_actions
-  ok_actions          = var.ok_actions
-  treat_missing_data  = "notBreaching"
+  period              = lookup(each.value.alarm_config, "period", 600)
+  statistic           = lookup(each.value.alarm_config, "statistic", "Average")
+  threshold           = lookup(each.value.alarm_config, "threshold", null)
 
   dimensions = {
-    DBClusterIdentifier = try(aws_rds_cluster.this[0].cluster_identifier, "")
+    DBInstanceIdentifier = aws_rds_cluster_instance.this[each.value.instance_key].identifier
   }
 
-  tags = merge(local.tags, {
-    Name = "${var.name}-aurora-read-latency"
-  })
-}
+  alarm_actions = lookup(each.value.alarm_config, "alarm_actions", null)
+  ok_actions    = lookup(each.value.alarm_config, "ok_actions", null)
 
-# Write Latency Alarm
-module "aurora_write_latency_alarm" {
-  count = var.enable_cloudwatch_alarms ? 1 : 0
-
-  source  = "oozou/cloudwatch-alarm/aws"
-  version = "1.0.0"
-
-  prefix      = var.prefix
-  environment = var.environment
-  name        = "${var.name}-aurora-write-latency"
-
-  alarm_description   = "Aurora cluster write latency is too high"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = var.write_latency_alarm_evaluation_periods
-  metric_name         = "WriteLatency"
-  namespace           = "AWS/RDS"
-  period              = var.write_latency_alarm_period
-  statistic           = "Average"
-  threshold           = var.write_latency_alarm_threshold
-  alarm_actions       = var.alarm_actions
-  ok_actions          = var.ok_actions
-  treat_missing_data  = "notBreaching"
-
-  dimensions = {
-    DBClusterIdentifier = try(aws_rds_cluster.this[0].cluster_identifier, "")
-  }
-
-  tags = merge(local.tags, {
-    Name = "${var.name}-aurora-write-latency"
-  })
+  tags = local.tags
 }

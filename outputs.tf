@@ -116,52 +116,42 @@ output "db_cluster_parameter_group_name" {
 }
 
 # CloudWatch Alarms Outputs
-output "aurora_cpu_alarm_arn" {
-  description = "The ARN of the Aurora CPU utilization alarm"
-  value       = var.enable_cloudwatch_alarms ? module.aurora_cpu_alarm[0].cloudwatch_metric_alarm_arn : null
+output "aurora_cluster_alarms" {
+  description = "Map of Aurora cluster alarms with their ARNs and IDs"
+  value = {
+    for k, v in module.aurora_cluster_alarms : k => {
+      arn = v.cloudwatch_metric_alarm_arn
+      id  = v.cloudwatch_metric_alarm_id
+    }
+  }
 }
 
-output "aurora_cpu_alarm_id" {
-  description = "The ID of the Aurora CPU utilization alarm"
-  value       = var.enable_cloudwatch_alarms ? module.aurora_cpu_alarm[0].cloudwatch_metric_alarm_id : null
+output "aurora_per_instance_alarms" {
+  description = "Map of Aurora per-instance alarms with their ARNs and IDs"
+  value = {
+    for k, v in module.aurora_per_instance_alarms : k => {
+      arn = v.cloudwatch_metric_alarm_arn
+      id  = v.cloudwatch_metric_alarm_id
+    }
+  }
 }
 
-output "aurora_database_connections_alarm_arn" {
-  description = "The ARN of the Aurora database connections alarm"
-  value       = var.enable_cloudwatch_alarms ? module.aurora_database_connections_alarm[0].cloudwatch_metric_alarm_arn : null
+output "aurora_cluster_alarm_arns" {
+  description = "Map of Aurora cluster alarm ARNs"
+  value       = { for k, v in module.aurora_cluster_alarms : k => v.cloudwatch_metric_alarm_arn }
 }
 
-output "aurora_database_connections_alarm_id" {
-  description = "The ID of the Aurora database connections alarm"
-  value       = var.enable_cloudwatch_alarms ? module.aurora_database_connections_alarm[0].cloudwatch_metric_alarm_id : null
+output "aurora_cluster_alarm_ids" {
+  description = "Map of Aurora cluster alarm IDs"
+  value       = { for k, v in module.aurora_cluster_alarms : k => v.cloudwatch_metric_alarm_id }
 }
 
-output "aurora_freeable_memory_alarm_arns" {
-  description = "The ARNs of the Aurora freeable memory alarms"
-  value       = { for k, v in module.aurora_freeable_memory_alarm : k => v.cloudwatch_metric_alarm_arn }
+output "aurora_per_instance_alarm_arns" {
+  description = "Map of Aurora per-instance alarm ARNs"
+  value       = { for k, v in module.aurora_per_instance_alarms : k => v.cloudwatch_metric_alarm_arn }
 }
 
-output "aurora_freeable_memory_alarm_ids" {
-  description = "The IDs of the Aurora freeable memory alarms"
-  value       = { for k, v in module.aurora_freeable_memory_alarm : k => v.cloudwatch_metric_alarm_id }
-}
-
-output "aurora_read_latency_alarm_arn" {
-  description = "The ARN of the Aurora read latency alarm"
-  value       = var.enable_cloudwatch_alarms ? module.aurora_read_latency_alarm[0].cloudwatch_metric_alarm_arn : null
-}
-
-output "aurora_read_latency_alarm_id" {
-  description = "The ID of the Aurora read latency alarm"
-  value       = var.enable_cloudwatch_alarms ? module.aurora_read_latency_alarm[0].cloudwatch_metric_alarm_id : null
-}
-
-output "aurora_write_latency_alarm_arn" {
-  description = "The ARN of the Aurora write latency alarm"
-  value       = var.enable_cloudwatch_alarms ? module.aurora_write_latency_alarm[0].cloudwatch_metric_alarm_arn : null
-}
-
-output "aurora_write_latency_alarm_id" {
-  description = "The ID of the Aurora write latency alarm"
-  value       = var.enable_cloudwatch_alarms ? module.aurora_write_latency_alarm[0].cloudwatch_metric_alarm_id : null
+output "aurora_per_instance_alarm_ids" {
+  description = "Map of Aurora per-instance alarm IDs"
+  value       = { for k, v in module.aurora_per_instance_alarms : k => v.cloudwatch_metric_alarm_id }
 }

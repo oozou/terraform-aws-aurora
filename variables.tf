@@ -483,115 +483,82 @@ variable "cloudwatch_log_kms_key_id" {
 /* -------------------------------------------------------------------------- */
 /*                               CLOUDWATCH ALARMS                            */
 /* -------------------------------------------------------------------------- */
-variable "enable_cloudwatch_alarms" {
-  description = "Whether to enable CloudWatch alarms for Aurora cluster"
-  type        = bool
-  default     = false
+variable "custom_aurora_cluster_alarms_configure" {
+  description = <<EOF
+    Custom Aurora cluster alarms configuration. Example:
+    custom_aurora_cluster_alarms_configure = {
+      cpu_utilization_too_high = {
+        metric_name         = "CPUUtilization"
+        statistic           = "Average"
+        comparison_operator = ">="
+        threshold           = "85"
+        period              = "300"
+        evaluation_periods  = "1"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+      database_connections_too_high = {
+        metric_name         = "DatabaseConnections"
+        statistic           = "Average"
+        comparison_operator = ">="
+        threshold           = "80"
+        period              = "300"
+        evaluation_periods  = "2"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+      read_latency_too_high = {
+        metric_name         = "ReadLatency"
+        statistic           = "Average"
+        comparison_operator = ">="
+        threshold           = "0.2"
+        period              = "300"
+        evaluation_periods  = "2"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+      write_latency_too_high = {
+        metric_name         = "WriteLatency"
+        statistic           = "Average"
+        comparison_operator = ">="
+        threshold           = "0.2"
+        period              = "300"
+        evaluation_periods  = "2"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+    }
+  EOF
+  type        = any
+  default     = {}
 }
 
-variable "alarm_actions" {
-  description = "List of ARN of the actions to execute when this alarm transitions into an ALARM state"
-  type        = list(string)
-  default     = []
-}
-
-variable "ok_actions" {
-  description = "List of ARN of the actions to execute when this alarm transitions into an OK state"
-  type        = list(string)
-  default     = []
-}
-
-# CPU Alarm Variables
-variable "cpu_alarm_evaluation_periods" {
-  description = "The number of periods over which data is compared to the specified threshold for CPU alarm"
-  type        = number
-  default     = 2
-}
-
-variable "cpu_alarm_period" {
-  description = "The period in seconds over which the specified statistic is applied for CPU alarm"
-  type        = string
-  default     = "300"
-}
-
-variable "cpu_alarm_threshold" {
-  description = "The value against which the specified statistic is compared for CPU alarm"
-  type        = number
-  default     = 80
-}
-
-# Database Connections Alarm Variables
-variable "connections_alarm_evaluation_periods" {
-  description = "The number of periods over which data is compared to the specified threshold for connections alarm"
-  type        = number
-  default     = 2
-}
-
-variable "connections_alarm_period" {
-  description = "The period in seconds over which the specified statistic is applied for connections alarm"
-  type        = string
-  default     = "300"
-}
-
-variable "connections_alarm_threshold" {
-  description = "The value against which the specified statistic is compared for connections alarm"
-  type        = number
-  default     = 80
-}
-
-# Memory Alarm Variables
-variable "memory_alarm_evaluation_periods" {
-  description = "The number of periods over which data is compared to the specified threshold for memory alarm"
-  type        = number
-  default     = 2
-}
-
-variable "memory_alarm_period" {
-  description = "The period in seconds over which the specified statistic is applied for memory alarm"
-  type        = string
-  default     = "300"
-}
-
-variable "memory_alarm_threshold" {
-  description = "The value against which the specified statistic is compared for memory alarm (in bytes)"
-  type        = number
-  default     = 104857600 # 100MB in bytes
-}
-
-# Read Latency Alarm Variables
-variable "read_latency_alarm_evaluation_periods" {
-  description = "The number of periods over which data is compared to the specified threshold for read latency alarm"
-  type        = number
-  default     = 2
-}
-
-variable "read_latency_alarm_period" {
-  description = "The period in seconds over which the specified statistic is applied for read latency alarm"
-  type        = string
-  default     = "300"
-}
-
-variable "read_latency_alarm_threshold" {
-  description = "The value against which the specified statistic is compared for read latency alarm (in seconds)"
-  type        = number
-  default     = 0.2
-}
-
-# Write Latency Alarm Variables
-variable "write_latency_alarm_evaluation_periods" {
-  description = "The number of periods over which data is compared to the specified threshold for write latency alarm"
-  type        = number
-  default     = 2
-}
-
-variable "write_latency_alarm_period" {
-  description = "The period in seconds over which the specified statistic is applied for write latency alarm"
-  type        = string
-  default     = "300"
-}
-
-variable "write_latency_alarm_threshold" {
-  description = "The value against which the specified statistic is compared for write latency alarm (in seconds)"
-  type        = number
-  default     = 0.2
+variable "custom_aurora_instance_alarms_configure" {
+  description = <<EOF
+    Custom Aurora instance alarms configuration. Example:
+    custom_aurora_instance_alarms_configure = {
+      freeable_memory_too_low = {
+        metric_name         = "FreeableMemory"
+        statistic           = "Average"
+        comparison_operator = "<="
+        threshold           = "104857600"
+        period              = "300"
+        evaluation_periods  = "2"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+      cpu_utilization_too_high = {
+        metric_name         = "CPUUtilization"
+        statistic           = "Average"
+        comparison_operator = ">="
+        threshold           = "85"
+        period              = "300"
+        evaluation_periods  = "2"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+    }
+EOF
+  type        = any
+  default     = {}
 }

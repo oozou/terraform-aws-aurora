@@ -24,29 +24,24 @@ output "cluster_reader_endpoint" {
 ################################################################################
 # CloudWatch Alarms Outputs
 ################################################################################
-output "aurora_cpu_alarm_arn" {
-  description = "The ARN of the Aurora CPU utilization alarm"
-  value       = module.aurora.aurora_cpu_alarm_arn
+output "aurora_cluster_alarms" {
+  description = "Map of Aurora cluster alarms with their ARNs and IDs"
+  value       = module.aurora.aurora_cluster_alarms
 }
 
-output "aurora_database_connections_alarm_arn" {
-  description = "The ARN of the Aurora database connections alarm"
-  value       = module.aurora.aurora_database_connections_alarm_arn
+output "aurora_per_instance_alarms" {
+  description = "Map of Aurora per-instance alarms with their ARNs and IDs"
+  value       = module.aurora.aurora_per_instance_alarms
 }
 
-output "aurora_freeable_memory_alarm_arns" {
-  description = "The ARNs of the Aurora freeable memory alarms"
-  value       = module.aurora.aurora_freeable_memory_alarm_arns
+output "aurora_cluster_alarm_arns" {
+  description = "Map of Aurora cluster alarm ARNs"
+  value       = module.aurora.aurora_cluster_alarm_arns
 }
 
-output "aurora_read_latency_alarm_arn" {
-  description = "The ARN of the Aurora read latency alarm"
-  value       = module.aurora.aurora_read_latency_alarm_arn
-}
-
-output "aurora_write_latency_alarm_arn" {
-  description = "The ARN of the Aurora write latency alarm"
-  value       = module.aurora.aurora_write_latency_alarm_arn
+output "aurora_per_instance_alarm_arns" {
+  description = "Map of Aurora per-instance alarm ARNs"
+  value       = module.aurora.aurora_per_instance_alarm_arns
 }
 
 ################################################################################

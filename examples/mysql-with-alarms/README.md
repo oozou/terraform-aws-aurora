@@ -73,30 +73,51 @@ The following alarms are configured:
 
 ## Customization
 
-You can customize the alarm thresholds and settings by modifying the variables in the module block:
+You can customize the alarm thresholds and settings by modifying the alarm configuration maps in the module block:
 
 ```hcl
 module "aurora" {
   # ... other configuration ...
 
-  # CloudWatch Alarms Configuration
-  enable_cloudwatch_alarms = true
-  alarm_actions           = [aws_sns_topic.aurora_alarms.arn]
-  ok_actions              = [aws_sns_topic.aurora_alarms.arn]
+  # CloudWatch Cluster Alarms Configuration
+  custom_aurora_cluster_alarms_configure = {
+    cpu_utilization_too_high = {
+      metric_name         = "CPUUtilization"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "80"  # Change CPU threshold to 80%
+      period              = "300"
+      evaluation_periods  = "3"   # Require 3 consecutive periods
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+    database_connections_too_high = {
+      metric_name         = "DatabaseConnections"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "150" # Change connections threshold to 150
+      period              = "300"
+      evaluation_periods  = "3"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+    # Add more cluster-level alarms as needed
+  }
 
-  # Customize thresholds
-  cpu_alarm_threshold                   = 80  # Change CPU threshold to 80%
-  connections_alarm_threshold           = 150 # Change connections threshold to 150
-  memory_alarm_threshold               = 52428800 # Change memory threshold to 50MB
-  read_latency_alarm_threshold         = 0.1  # Change read latency to 100ms
-  write_latency_alarm_threshold        = 0.1  # Change write latency to 100ms
-  
-  # Customize evaluation periods
-  cpu_alarm_evaluation_periods         = 3    # Require 3 consecutive periods
-  connections_alarm_evaluation_periods = 3
-  memory_alarm_evaluation_periods      = 3
-  read_latency_alarm_evaluation_periods = 3
-  write_latency_alarm_evaluation_periods = 3
+  # CloudWatch Instance Alarms Configuration
+  custom_aurora_instance_alarms_configure = {
+    freeable_memory_too_low = {
+      metric_name         = "FreeableMemory"
+      statistic           = "Average"
+      comparison_operator = "<="
+      threshold           = "52428800" # Change memory threshold to 50MB
+      period              = "300"
+      evaluation_periods  = "3"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+    # Add more instance-level alarms as needed
+  }
 }
 ```
 

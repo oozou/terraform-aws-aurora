@@ -124,34 +124,61 @@ module "aurora" {
   db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.example.id
 
   # CloudWatch Alarms Configuration
-  enable_cloudwatch_alarms = true
-  alarm_actions           = [aws_sns_topic.aurora_alarms.arn]
-  ok_actions              = [aws_sns_topic.aurora_alarms.arn]
+  custom_aurora_cluster_alarms_configure = {
+    cpu_utilization_too_high = {
+      metric_name         = "CPUUtilization"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "75"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+    database_connections_too_high = {
+      metric_name         = "DatabaseConnections"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "100"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+    read_latency_too_high = {
+      metric_name         = "ReadLatency"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "0.2"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+    write_latency_too_high = {
+      metric_name         = "WriteLatency"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "0.2"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+  }
 
-  # CPU Alarm Configuration
-  cpu_alarm_threshold         = 75
-  cpu_alarm_evaluation_periods = 2
-  cpu_alarm_period            = "300"
-
-  # Database Connections Alarm Configuration
-  connections_alarm_threshold         = 100
-  connections_alarm_evaluation_periods = 2
-  connections_alarm_period            = "300"
-
-  # Memory Alarm Configuration (100MB threshold)
-  memory_alarm_threshold         = 104857600
-  memory_alarm_evaluation_periods = 2
-  memory_alarm_period            = "300"
-
-  # Read Latency Alarm Configuration (200ms threshold)
-  read_latency_alarm_threshold         = 0.2
-  read_latency_alarm_evaluation_periods = 2
-  read_latency_alarm_period            = "300"
-
-  # Write Latency Alarm Configuration (200ms threshold)
-  write_latency_alarm_threshold         = 0.2
-  write_latency_alarm_evaluation_periods = 2
-  write_latency_alarm_period            = "300"
+  custom_aurora_instance_alarms_configure = {
+    freeable_memory_too_low = {
+      metric_name         = "FreeableMemory"
+      statistic           = "Average"
+      comparison_operator = "<="
+      threshold           = "104857600"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+  }
 
   tags = { workspace = "000-oozou-aurora test" }
 }
