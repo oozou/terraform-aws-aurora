@@ -483,6 +483,24 @@ variable "cloudwatch_log_kms_key_id" {
 /* -------------------------------------------------------------------------- */
 /*                               CLOUDWATCH ALARMS                            */
 /* -------------------------------------------------------------------------- */
+variable "is_enabled_default_alarm" {
+  description = "Whether to enable default CloudWatch alarms for Aurora cluster"
+  type        = bool
+  default     = false
+}
+
+variable "default_alarm_actions" {
+  description = "List of ARN of the actions to execute when default alarms transition into an ALARM state"
+  type        = list(string)
+  default     = []
+}
+
+variable "default_ok_actions" {
+  description = "List of ARN of the actions to execute when default alarms transition into an OK state"
+  type        = list(string)
+  default     = []
+}
+
 variable "custom_aurora_cluster_alarms_configure" {
   description = <<EOF
     Custom Aurora cluster alarms configuration. Example:

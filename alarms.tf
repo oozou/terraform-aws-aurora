@@ -5,6 +5,68 @@ locals {
     "<"  = "LessThanThreshold",
     "<=" = "LessThanOrEqualToThreshold",
   }
+
+  # Default cluster alarms configuration
+  default_cluster_alarms = var.is_enabled_default_alarm ? {
+    cpu_utilization_too_high = {
+      metric_name         = "CPUUtilization"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "80"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = var.default_alarm_actions
+      ok_actions          = var.default_ok_actions
+    }
+    database_connections_too_high = {
+      metric_name         = "DatabaseConnections"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "80"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = var.default_alarm_actions
+      ok_actions          = var.default_ok_actions
+    }
+    read_latency_too_high = {
+      metric_name         = "ReadLatency"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "0.2"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = var.default_alarm_actions
+      ok_actions          = var.default_ok_actions
+    }
+    write_latency_too_high = {
+      metric_name         = "WriteLatency"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "0.2"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = var.default_alarm_actions
+      ok_actions          = var.default_ok_actions
+    }
+  } : {}
+
+  # Default instance alarms configuration
+  default_instance_alarms = var.is_enabled_default_alarm ? {
+    freeable_memory_too_low = {
+      metric_name         = "FreeableMemory"
+      statistic           = "Average"
+      comparison_operator = "<="
+      threshold           = "104857600" # 100MB
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = var.default_alarm_actions
+      ok_actions          = var.default_ok_actions
+    }
+  } : {}
+
+  # Merge default and custom configurations
+  final_cluster_alarms = merge(local.default_cluster_alarms, var.custom_aurora_cluster_alarms_configure)
+  final_instance_alarms = merge(local.default_instance_alarms, var.custom_aurora_instance_alarms_configure)
 }
 
 # Aurora Cluster Alarms
@@ -12,7 +74,7 @@ module "aurora_cluster_alarms" {
   source  = "oozou/cloudwatch-alarm/aws"
   version = "1.0.0"
 
-  for_each   = var.is_create_cluster ? var.custom_aurora_cluster_alarms_configure : {}
+  for_each   = var.is_create_cluster ? local.final_cluster_alarms : {}
   depends_on = [aws_rds_cluster.this[0]]
 
   prefix      = var.prefix
@@ -102,7 +164,7 @@ module "aurora_per_instance_alarms" {
   for_each = var.is_create_cluster && !local.is_serverless ? {
     for combination in flatten([
       for instance_key, instance_config in var.instances : [
-        for alarm_key, alarm_config in var.custom_aurora_instance_alarms_configure : {
+        for alarm_key, alarm_config in local.final_instance_alarms : {
           key           = "${instance_key}-${alarm_key}"
           instance_key  = instance_key
           alarm_key     = alarm_key
