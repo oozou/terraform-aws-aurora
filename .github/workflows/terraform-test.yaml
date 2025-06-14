@@ -192,15 +192,15 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const totalTests = '${{ steps.test-report.outputs.TOTAL_TESTS }}';
-            const passedTests = '${{ steps.test-report.outputs.PASSED_TESTS }}';
-            const failedTests = '${{ steps.test-report.outputs.FAILED_TESTS }}';
-            const skippedTests = '${{ steps.test-report.outputs.SKIPPED_TESTS }}';
-            const duration = '${{ steps.test-report.outputs.DURATION }}';
-            const summary = '${{ steps.test-report.outputs.SUMMARY }}';
-            const passRate = '${{ steps.test-report.outputs.PASS_RATE }}';
-            const jobStatus = '${{ steps.test-report.outputs.JOB_STATUS }}';
-            const detailedResults = '${{ steps.test-report.outputs.DETAILED_RESULTS }}';
+            const totalTests = String.raw`${{ steps.test-report.outputs.TOTAL_TESTS }}`;
+            const passedTests = String.raw`${{ steps.test-report.outputs.PASSED_TESTS }}`;
+            const failedTests = String.raw`${{ steps.test-report.outputs.FAILED_TESTS }}`;
+            const skippedTests = String.raw`${{ steps.test-report.outputs.SKIPPED_TESTS }}`;
+            const duration = String.raw`${{ steps.test-report.outputs.DURATION }}`;
+            const summary = String.raw`${{ steps.test-report.outputs.SUMMARY }}`;
+            const passRate = String.raw`${{ steps.test-report.outputs.PASS_RATE }}`;
+            const jobStatus = String.raw`${{ steps.test-report.outputs.JOB_STATUS }}`;
+            const detailedResults = String.raw`${{ steps.test-report.outputs.DETAILED_RESULTS }}`;
             
             const workflowUrl = context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId;
             const commitSha = context.payload.pull_request.head.sha.substring(0, 7);
