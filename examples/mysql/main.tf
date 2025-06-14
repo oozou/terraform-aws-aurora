@@ -66,11 +66,11 @@ module "aurora" {
   instances = {
     one = {
       identifier_prefix = "writer-db-instance1"
-      instance_class    = "db.r4.large"
+      instance_class    = "db.t4g.medium"
     }
     two = {
       identifier_prefix = "reader-db-instance1"
-      instance_class    = "db.r4.large"
+      instance_class    = "db.t4g.medium"
     }
   }
   endpoints = {

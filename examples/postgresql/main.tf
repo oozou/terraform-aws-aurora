@@ -64,11 +64,11 @@ module "aurora" {
   instances = {
     one = {
       identifier_prefix = "writer-db-instance1"
-      instance_class    = "db.r6g.large"
+      instance_class    = "db.t4g.medium"
     }
     two = {
       identifier_prefix = "reader-db-instance1"
-      instance_class    = "db.r6g.large"
+      instance_class    = "db.t4g.medium"
     }
   }
   endpoints = {
@@ -78,7 +78,7 @@ module "aurora" {
     }
   }
 
-  instance_class           = "db.r6g.large"
+  instance_class           = "db.t4g.medium"
   is_autoscaling_enabled   = true
   autoscaling_max_capacity = 3
   autoscaling_min_capacity = 1

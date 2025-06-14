@@ -37,7 +37,7 @@ resource "aws_sns_topic_subscription" "email" {
 # vpc
 ################################################################################
 module "vpc" {
-  source = "git@github.com:oozou/terraform-aws-vpc.git?ref=v1.1.2"
+  source = "git@github.com:oozou/terraform-aws-vpc.git?ref=v2.0.3"
 
   is_create_vpc = true
 
@@ -77,11 +77,11 @@ module "aurora" {
   instances = {
     one = {
       identifier_prefix = "writer-db-instance1"
-      instance_class    = "db.r5.large"
+      instance_class    = "db.t4g.medium"
     }
     two = {
       identifier_prefix = "reader-db-instance1"
-      instance_class    = "db.r5.large"
+      instance_class    = "db.t4g.medium"
     }
   }
   endpoints = {

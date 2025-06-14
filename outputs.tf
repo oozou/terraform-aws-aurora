@@ -20,7 +20,8 @@ output "cluster_resource_id" {
 
 output "cluster_members" {
   description = "List of RDS Instances that are a part of this cluster"
-  value       = try(aws_rds_cluster.this[0].cluster_members, "")
+  value       = try(aws_rds_cluster.this[0].cluster_members, [])
+  depends_on = [aws_rds_cluster_instance.this]
 }
 
 output "cluster_endpoint" {
