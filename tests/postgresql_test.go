@@ -55,8 +55,13 @@ func TestTerraformAuroraPostgreSQL(t *testing.T) {
 		report.PrintReport()
 		
 		// Save reports to files
-		report.SaveReportToFile("test-report.json")
-		report.SaveReportToHTML("test-report.html")
+		if err := report.SaveReportToFile("test-report.json"); err != nil {
+			t.Errorf("failed to save report to file: %v", err)
+		}
+
+		if err := report.SaveReportToHTML("test-report.html"); err != nil {
+			t.Errorf("failed to save report to HTML: %v", err)
+		}
 	}()
 
 	// This will run `terraform init` and `terraform apply` and fail the test if there are any errors

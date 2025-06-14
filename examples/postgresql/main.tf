@@ -56,8 +56,8 @@ module "vpc" {
 module "aurora" {
   source = "../.."
 
-  name        = "postgresql-demo-db"
-  environment = "uat"
+  name           = "postgresql-demo-db"
+  environment    = "uat"
   engine_version = "12.7"
 
   is_instances_use_identifier_prefix = true

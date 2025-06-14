@@ -32,7 +32,7 @@ resource "aws_sns_topic" "aurora_alarms" {
 # VPC Configuration
 ################################################################################
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
 
   name = "${local.name}-vpc"
@@ -129,7 +129,7 @@ module "aurora" {
 
   # Encryption settings
   is_storage_encrypted = true
-  kms_key_id          = aws_kms_key.rds.arn
+  kms_key_id           = aws_kms_key.rds.arn
 
   # Backup settings
   backup_retention_period = 7
