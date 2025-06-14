@@ -65,7 +65,7 @@ locals {
   } : {}
 
   # Merge default and custom configurations
-  final_cluster_alarms = merge(local.default_cluster_alarms, var.custom_aurora_cluster_alarms_configure)
+  final_cluster_alarms  = merge(local.default_cluster_alarms, var.custom_aurora_cluster_alarms_configure)
   final_instance_alarms = merge(local.default_instance_alarms, var.custom_aurora_instance_alarms_configure)
 }
 
@@ -165,10 +165,10 @@ module "aurora_per_instance_alarms" {
     for combination in flatten([
       for instance_key, instance_config in var.instances : [
         for alarm_key, alarm_config in local.final_instance_alarms : {
-          key           = "${instance_key}-${alarm_key}"
-          instance_key  = instance_key
-          alarm_key     = alarm_key
-          alarm_config  = alarm_config
+          key          = "${instance_key}-${alarm_key}"
+          instance_key = instance_key
+          alarm_key    = alarm_key
+          alarm_config = alarm_config
         }
       ]
     ]) : combination.key => combination
