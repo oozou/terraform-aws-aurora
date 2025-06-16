@@ -2,6 +2,21 @@
 
 All notable changes to this module will be documented in this file.
 
+## [1.2.0] - 2025-06-16
+
+### Added default alarms, terraform test, pull request workflow
+
+- add resources:
+    - moduel.aurora_cluster_alarms
+    - module.aurora_instance_alarms
+    - module.aurora_per_instance_alarms
+ 
+- add tests
+    - tests/
+    - examples/postgresql-test
+    - examples/postgresql-with-default-alarms
+
+
 ## [1.1.0] - 2025-05-23
 
 ### Added client security group
