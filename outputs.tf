@@ -20,7 +20,8 @@ output "cluster_resource_id" {
 
 output "cluster_members" {
   description = "List of RDS Instances that are a part of this cluster"
-  value       = try(aws_rds_cluster.this[0].cluster_members, "")
+  value       = try(aws_rds_cluster.this[0].cluster_members, [])
+  depends_on  = [aws_rds_cluster_instance.this]
 }
 
 output "cluster_endpoint" {
@@ -113,4 +114,45 @@ output "db_parameter_group_name" {
 output "db_cluster_parameter_group_name" {
   description = "name of db cluster parameter group"
   value       = join("", aws_rds_cluster_parameter_group.this.*.id)
+}
+
+# CloudWatch Alarms Outputs
+output "aurora_cluster_alarms" {
+  description = "Map of Aurora cluster alarms with their ARNs and IDs"
+  value = {
+    for k, v in module.aurora_cluster_alarms : k => {
+      arn = v.cloudwatch_metric_alarm_arn
+      id  = v.cloudwatch_metric_alarm_id
+    }
+  }
+}
+
+output "aurora_per_instance_alarms" {
+  description = "Map of Aurora per-instance alarms with their ARNs and IDs"
+  value = {
+    for k, v in module.aurora_per_instance_alarms : k => {
+      arn = v.cloudwatch_metric_alarm_arn
+      id  = v.cloudwatch_metric_alarm_id
+    }
+  }
+}
+
+output "aurora_cluster_alarm_arns" {
+  description = "Map of Aurora cluster alarm ARNs"
+  value       = { for k, v in module.aurora_cluster_alarms : k => v.cloudwatch_metric_alarm_arn }
+}
+
+output "aurora_cluster_alarm_ids" {
+  description = "Map of Aurora cluster alarm IDs"
+  value       = { for k, v in module.aurora_cluster_alarms : k => v.cloudwatch_metric_alarm_id }
+}
+
+output "aurora_per_instance_alarm_arns" {
+  description = "Map of Aurora per-instance alarm ARNs"
+  value       = { for k, v in module.aurora_per_instance_alarms : k => v.cloudwatch_metric_alarm_arn }
+}
+
+output "aurora_per_instance_alarm_ids" {
+  description = "Map of Aurora per-instance alarm IDs"
+  value       = { for k, v in module.aurora_per_instance_alarms : k => v.cloudwatch_metric_alarm_id }
 }

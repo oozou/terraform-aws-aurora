@@ -479,3 +479,104 @@ variable "cloudwatch_log_kms_key_id" {
   type        = string
   default     = null
 }
+
+/* -------------------------------------------------------------------------- */
+/*                               CLOUDWATCH ALARMS                            */
+/* -------------------------------------------------------------------------- */
+variable "is_enabled_default_alarm" {
+  description = "Whether to enable default CloudWatch alarms for Aurora cluster"
+  type        = bool
+  default     = false
+}
+
+variable "default_alarm_actions" {
+  description = "List of ARN of the actions to execute when default alarms transition into an ALARM state"
+  type        = list(string)
+  default     = []
+}
+
+variable "default_ok_actions" {
+  description = "List of ARN of the actions to execute when default alarms transition into an OK state"
+  type        = list(string)
+  default     = []
+}
+
+variable "custom_aurora_cluster_alarms_configure" {
+  description = <<EOF
+    Custom Aurora cluster alarms configuration. Example:
+    custom_aurora_cluster_alarms_configure = {
+      cpu_utilization_too_high = {
+        metric_name         = "CPUUtilization"
+        statistic           = "Average"
+        comparison_operator = ">="
+        threshold           = "85"
+        period              = "300"
+        evaluation_periods  = "1"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+      database_connections_too_high = {
+        metric_name         = "DatabaseConnections"
+        statistic           = "Average"
+        comparison_operator = ">="
+        threshold           = "80"
+        period              = "300"
+        evaluation_periods  = "2"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+      read_latency_too_high = {
+        metric_name         = "ReadLatency"
+        statistic           = "Average"
+        comparison_operator = ">="
+        threshold           = "0.2"
+        period              = "300"
+        evaluation_periods  = "2"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+      write_latency_too_high = {
+        metric_name         = "WriteLatency"
+        statistic           = "Average"
+        comparison_operator = ">="
+        threshold           = "0.2"
+        period              = "300"
+        evaluation_periods  = "2"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+    }
+  EOF
+  type        = any
+  default     = {}
+}
+
+variable "custom_aurora_instance_alarms_configure" {
+  description = <<EOF
+    Custom Aurora instance alarms configuration. Example:
+    custom_aurora_instance_alarms_configure = {
+      freeable_memory_too_low = {
+        metric_name         = "FreeableMemory"
+        statistic           = "Average"
+        comparison_operator = "<="
+        threshold           = "104857600"
+        period              = "300"
+        evaluation_periods  = "2"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+      cpu_utilization_too_high = {
+        metric_name         = "CPUUtilization"
+        statistic           = "Average"
+        comparison_operator = ">="
+        threshold           = "85"
+        period              = "300"
+        evaluation_periods  = "2"
+        alarm_actions       = [sns_topic_arn]
+        ok_actions          = [sns_topic_arn]
+      }
+    }
+EOF
+  type        = any
+  default     = {}
+}

@@ -123,7 +123,7 @@ resource "aws_rds_cluster_instance" "this" {
 
   identifier                            = var.is_instances_use_identifier_prefix ? null : lookup(each.value, "identifier", "${local.name}-${each.key}")
   identifier_prefix                     = var.is_instances_use_identifier_prefix ? lookup(each.value, "identifier_prefix", "${local.name}-${each.key}-") : null
-  cluster_identifier                    = try(aws_rds_cluster.this[0].id, "")
+  cluster_identifier                    = aws_rds_cluster.this[0].id
   engine                                = var.engine
   engine_version                        = var.engine_version
   instance_class                        = lookup(each.value, "instance_class", var.instance_class)

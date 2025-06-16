@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 locals {
-  name   = "aurora-mysql-db"
+  name   = "aurora-mysql-db-with-alarms"
   region = "ap-southeast-1"
   tags = {
     Owner       = "user"
@@ -19,6 +19,19 @@ resource "random_password" "master" {
   length = 10
 }
 
+################################################################################
+# SNS Topic for Alarm Notifications
+################################################################################
+resource "aws_sns_topic" "aurora_alarms" {
+  name = "${local.name}-aurora-alarms"
+  tags = local.tags
+}
+
+resource "aws_sns_topic_subscription" "email" {
+  topic_arn = aws_sns_topic.aurora_alarms.arn
+  protocol  = "email"
+  endpoint  = "admin@example.com" # Replace with your email
+}
 
 ################################################################################
 # vpc
@@ -43,13 +56,11 @@ module "vpc" {
   is_create_flow_log                = false
   is_enable_flow_log_s3_integration = false
 
-
-
   tags = { workspace = "000-oozou-aurora test" }
 }
 
 ################################################################################
-# RDS Aurora Module
+# RDS Aurora Module with CloudWatch Alarms
 ################################################################################
 
 module "aurora" {
@@ -80,7 +91,6 @@ module "aurora" {
     }
   }
 
-  #instance_class           = "db.r6g.xlarge"
   is_autoscaling_enabled   = true
   autoscaling_max_capacity = 3
   autoscaling_min_capacity = 1
@@ -95,14 +105,12 @@ module "aurora" {
     allow_vpn_in_client_network = {
       cidr_blocks = ["172.16.0.0/24"]
     }
-
   }
   security_group_egress_rules = {
     anywhere = {
       protocol    = "tcp"
       cidr_blocks = ["0.0.0.0/0"]
     }
-
   }
 
   performance_insights_enabled = true
@@ -114,7 +122,65 @@ module "aurora" {
   enabled_cloudwatch_logs_exports = ["audit", "error", "general", "slowquery"]
   db_parameter_group_name         = aws_db_parameter_group.example.id
   db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.example.id
-  tags                            = { workspace = "000-oozou-aurora test" }
+
+  # CloudWatch Alarms Configuration
+  custom_aurora_cluster_alarms_configure = {
+    cpu_utilization_too_high = {
+      metric_name         = "CPUUtilization"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "75"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+    database_connections_too_high = {
+      metric_name         = "DatabaseConnections"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "100"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+    read_latency_too_high = {
+      metric_name         = "ReadLatency"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "0.2"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+    write_latency_too_high = {
+      metric_name         = "WriteLatency"
+      statistic           = "Average"
+      comparison_operator = ">="
+      threshold           = "0.2"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+  }
+
+  custom_aurora_instance_alarms_configure = {
+    freeable_memory_too_low = {
+      metric_name         = "FreeableMemory"
+      statistic           = "Average"
+      comparison_operator = "<="
+      threshold           = "104857600"
+      period              = "300"
+      evaluation_periods  = "2"
+      alarm_actions       = [aws_sns_topic.aurora_alarms.arn]
+      ok_actions          = [aws_sns_topic.aurora_alarms.arn]
+    }
+  }
+
+  tags = { workspace = "000-oozou-aurora test" }
 }
 
 resource "aws_db_parameter_group" "example" {
@@ -130,4 +196,3 @@ resource "aws_rds_cluster_parameter_group" "example" {
   description = "${local.name}-aurora-57-cluster-parameter-group"
   tags        = local.tags
 }
-
