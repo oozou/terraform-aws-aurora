@@ -12,7 +12,7 @@ on:
 jobs:
   test:
     name: Run Terraform Tests
-    uses: oozou/cicd/.github/workflows/terraform-test.yml@master
+    uses: oozou/cicd/.github/workflows/terraform-test.yml
     secrets: inherit
     with:
       aws_region: 'ap-southeast-1'
