@@ -5,7 +5,7 @@ on:
   workflow_dispatch: 
 jobs:
   build-deploy:
-    uses: oozou/cicd/.github/workflows/nodejs.yml
+    uses: oozou/cicd/.github/workflows/nodejs.yml@master
     secrets: inherit
     with:
       ENVIRONMENT: dev
