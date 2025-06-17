@@ -9,6 +9,11 @@ on:
       - '.github/workflows/terraform-test.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: read
+  id-token: write
+  
 jobs:
   test:
     name: Run Terraform Tests
