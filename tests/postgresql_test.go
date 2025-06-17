@@ -10,6 +10,7 @@ import (
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/your-org/terraform-test-util"
 )
 
 func TestTerraformAuroraPostgreSQL(t *testing.T) {
@@ -17,7 +18,7 @@ func TestTerraformAuroraPostgreSQL(t *testing.T) {
 
 	// Record test start time
 	startTime := time.Now()
-	var testResults []TestResult
+	var testResults []testutil.TestResult
 
 	// Pick a random AWS region to test in
 	awsRegion := "ap-southeast-1"
@@ -51,7 +52,7 @@ func TestTerraformAuroraPostgreSQL(t *testing.T) {
 		
 		// Generate and display test report
 		endTime := time.Now()
-		report := GenerateTestReport(testResults, startTime, endTime)
+		report := testutil.GenerateTestReport(testResults, startTime, endTime)
 		report.PrintReport()
 		
 		// Save reports to files
@@ -91,7 +92,7 @@ func TestTerraformAuroraPostgreSQL(t *testing.T) {
 				testEnd := time.Now()
 				duration := testEnd.Sub(testStart)
 				
-				result := TestResult{
+				result := testutil.TestResult{
 					Name:     tc.name,
 					Duration: duration.String(),
 				}

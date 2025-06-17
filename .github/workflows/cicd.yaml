@@ -1,0 +1,16 @@
+name: build-deploy
+
+# Controls when the workflow will run
+on:
+  workflow_dispatch: 
+jobs:
+  build-deploy:
+    uses: oozou/cicd/.github/workflows/nodejs.yml@master
+    secrets: inherit
+    with:
+      ENVIRONMENT: dev
+      ECR_REPOSITORY_DEV:  cmrs-dev-cmrs-api-ecr
+      IAM_OIDC_ROLE_DEV: arn:aws:iam::140023376669:role/cmrs-DEV-custom-GithubOIDCRole
+      REGION: ap-southeast-1
+      PREFIX: cmrs
+      NAME: app
