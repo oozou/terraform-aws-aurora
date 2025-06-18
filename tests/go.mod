@@ -4,11 +4,9 @@ go 1.21
 
 require (
 	github.com/gruntwork-io/terratest v0.46.8
+	github.com/oozou/terraform-test-util v0.0.1
 	github.com/stretchr/testify v1.8.4
-	github.com/your-org/terraform-test-util v0.0.0
 )
-
-replace github.com/your-org/terraform-test-util => ../../terraform-test-util
 
 require (
 	cloud.google.com/go v0.110.8 // indirect

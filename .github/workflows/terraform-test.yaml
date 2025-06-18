@@ -6,13 +6,18 @@ on:
       - '*.tf'
       - 'tests/**'
       - 'examples/postgresql-test/**'
-      - '.github/workflows/terraform-test.yml'
+      - '.github/workflows/terraform-test.yaml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+  
 jobs:
   test:
     name: Run Terraform Tests
-    uses: oozou/cicd/.github/workflows/terraform-test.yml@master
+    uses: oozou/.github/.github/workflows/terraform-test.yml@main
     secrets: inherit
     with:
       aws_region: 'ap-southeast-1'

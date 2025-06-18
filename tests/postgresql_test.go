@@ -10,7 +10,7 @@ import (
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/your-org/terraform-test-util"
+	"github.com/oozou/terraform-test-util"
 )
 
 func TestTerraformAuroraPostgreSQL(t *testing.T) {
